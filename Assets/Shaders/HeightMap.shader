@@ -12,9 +12,10 @@
 		_TopHeight("Top Height", Range(-1, 1.5)) = 0.5
 		_TopNormalTex("NormalMap", 2D) = "white" {}
 
-		_Fade("Fade", Range(0,1)) = 0.5		
+		_Fade("Fade", Range(0,1)) = 0.5
 	}
-	SubShader {
+	SubShader 
+		{
 		Tags { "RenderType"="Opaque" }
 		LOD 200
 		
@@ -30,10 +31,10 @@
 		uniform sampler2D _MainNormalTex;
 
 		uniform sampler2D _TopTex;
-		sampler2D _TopNormalTex;
-		sampler2D _TopHeightTex;
-		uniform float _TopHeight;
-		uniform float _Fade;
+		uniform sampler2D _TopNormalTex;
+		uniform sampler2D _TopHeightTex;
+		uniform half _TopHeight;
+		uniform half _Fade;
 
 		struct Input 
 		{
@@ -63,25 +64,29 @@
 			return c;
 		}
 
-		float4 getBlend(float4 left, float4 right, float t)
+		fixed3 getBlend(fixed3 left, fixed3 right, half t)
 		{
-			float f = t * (3 * t - 2 * t*t);			
+			half f = t * (3 * t - 2 * t*t);			
 			
-			float4 result = lerp(left, right, f);
+			fixed3 result = lerp(left, right, f);
 			return result;
 		}
 
 		void surf (Input IN, inout SurfaceOutput o)
 		{
-			float mainHeight = tex2D(_MainHeightTex, IN.uv_MainTex).r;
-			float topHeight = tex2D(_TopHeightTex, IN.uv_TopTex).r + _TopHeight + IN.uv_MainTex.x / 2;			
+			fixed mainHeight = tex2D(_MainHeightTex, IN.uv_MainTex).r;
+			fixed topHeight = tex2D(_TopHeightTex, IN.uv_TopTex).r + _TopHeight + IN.uv_MainTex.x / 2;			
 			
-			float ss = smoothstep(mainHeight - _Fade / 2.0, mainHeight + _Fade / 2.0, topHeight);
-			
-			float dif = (abs(mainHeight - topHeight));
-			
-			o.Albedo = getBlend(tex2D(_MainTex, IN.uv_MainTex), tex2D(_TopTex, IN.uv_TopTex), ss);
-			o.Normal = UnpackNormal(lerp(tex2D(_MainNormalTex, IN.uv_MainTex), tex2D(_TopNormalTex, IN.uv_TopTex), ss));
+			half ss = smoothstep(mainHeight - _Fade / 2.0, mainHeight + _Fade / 2.0, topHeight);
+						
+			o.Albedo = getBlend(tex2D(_MainTex, IN.uv_MainTex).rgb, tex2D(_TopTex, IN.uv_TopTex).rgb, ss);
+			o.Normal = UnpackNormal(
+					       lerp(
+							   tex2D(_MainNormalTex, IN.uv_MainTex), 
+							   tex2D(_TopNormalTex, IN.uv_TopTex), 
+							   ss
+						   )
+					   );
 		}
 		ENDCG
 	}
